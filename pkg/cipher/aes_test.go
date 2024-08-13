@@ -127,7 +127,7 @@ func TestAESCipher_Encrypt(t *testing.T) {
 			}
 
 			ac := &AESCipher{
-				key: tt.fields.key,
+				Key: tt.fields.key,
 			}
 			got, err := ac.Encrypt(tt.args.data)
 			if (err != nil) != tt.wantErr {
@@ -194,7 +194,7 @@ func TestAESCipher_Decrypt(t *testing.T) {
 			}
 
 			ac := &AESCipher{
-				key: tt.fields.key,
+				Key: tt.fields.key,
 			}
 			got, err := ac.Decrypt(tt.args.data)
 			if (err != nil) != tt.wantErr {
@@ -224,19 +224,19 @@ func TestNewAESCipher(t *testing.T) {
 		{
 			name:    "16",
 			args:    args{key: key16},
-			want:    &AESCipher{key: key16},
+			want:    &AESCipher{Key: key16},
 			wantErr: false,
 		},
 		{
 			name:    "24",
 			args:    args{key: key24},
-			want:    &AESCipher{key: key24},
+			want:    &AESCipher{Key: key24},
 			wantErr: false,
 		},
 		{
 			name:    "32",
 			args:    args{key: key32},
-			want:    &AESCipher{key: key32},
+			want:    &AESCipher{Key: key32},
 			wantErr: false,
 		},
 		{

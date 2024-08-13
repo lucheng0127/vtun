@@ -13,14 +13,14 @@ import (
 )
 
 type AESCipher struct {
-	key string
+	Key string
 }
 
 func NewAESCipher(key string) (Cipher, error) {
 	if !utils.ValidateKey(key) {
 		return nil, errors.New("invalid key size, 16, 24 or 32")
 	}
-	return &AESCipher{key: key}, nil
+	return &AESCipher{Key: key}, nil
 }
 
 // AES CBC can only encrypt data with blocksize,
@@ -48,12 +48,8 @@ func (ac *AESCipher) PKCS7Unpadding(data []byte) []byte {
 }
 
 func (ac *AESCipher) Encrypt(data []byte) ([]byte, error) {
-	if len(data) == 0 {
-		return make([]byte, 0), errors.New("cipher data can be empty")
-	}
-
 	// Create cipher block
-	block, err := aes.NewCipher([]byte(ac.key))
+	block, err := aes.NewCipher([]byte(ac.Key))
 	if err != nil {
 		return make([]byte, 0), err
 	}
@@ -80,7 +76,7 @@ func (ac *AESCipher) Decrypt(data []byte) ([]byte, error) {
 	}
 
 	// Create cipher Block
-	block, err := aes.NewCipher([]byte(ac.key))
+	block, err := aes.NewCipher([]byte(ac.Key))
 	if err != nil {
 		return make([]byte, 0), err
 	}
