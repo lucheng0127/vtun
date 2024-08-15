@@ -38,6 +38,11 @@ func TestAESCipher(t *testing.T) {
 			data:    []byte(strconv.Itoa(19960127)),
 			wantErr: false,
 		},
+		{
+			name:    "empty data",
+			data:    make([]byte, 0),
+			wantErr: false,
+		},
 	}
 
 	for _, tt := range tests {
@@ -175,6 +180,19 @@ func TestAESCipher_Decrypt(t *testing.T) {
 		},
 		{
 			name: "ERR: wrong data length",
+			fields: fields{
+				key: key16,
+			},
+			args: args{
+				[]byte("1"),
+			},
+			want:       make([]byte, 0),
+			wantErr:    true,
+			targetFunc: nil,
+			patchFunc:  nil,
+		},
+		{
+			name: "ERR: empty data",
 			fields: fields{
 				key: key16,
 			},

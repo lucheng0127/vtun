@@ -36,10 +36,15 @@ type VTPacket struct {
 
 // Payload should be the crypted data
 func NewVTPkt(flag uint16, payload []byte, encipher cipher.Cipher) (*VTPacket, error) {
-	// Encrypt payload
-	ePayload, err := encipher.Encrypt(payload)
-	if err != nil {
-		return nil, err
+	var err error
+	ePayload := payload
+
+	if len(payload) != 0 {
+		// Encrypt payload if not empty
+		ePayload, err = encipher.Encrypt(payload)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Build pkt
@@ -94,6 +99,12 @@ func Decode(stream []byte, encipher cipher.Cipher) (uint16, []byte, error) {
 	if sLen != (HDR_LEN + int(pLen) + int(nLen)) {
 		return HDR_FLG_UNKNOW, make([]byte, 0), errors.New("invalidate data fragment")
 	}
+
+	if pLen == 0 {
+		// Return no payload
+		return flag, make([]byte, 0), nil
+	}
+
 	ePayload := stream[6 : 6+int(pLen)]
 
 	// Decrypt payload
