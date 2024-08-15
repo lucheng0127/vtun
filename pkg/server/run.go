@@ -51,7 +51,7 @@ func Run(cCtx *cli.Context) error {
 	}
 
 	// Create server
-	svc, err := NewServer(iface, cfg.IPRange, userDB, cfg.Port, maskLen)
+	svc, err := NewServer(iface, cfg.IPRange, userDB, cfg.Key, cfg.Port, maskLen)
 	if err != nil {
 		return err
 	}

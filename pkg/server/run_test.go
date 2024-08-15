@@ -77,7 +77,7 @@ func TestRun(t *testing.T) {
 				},
 				{
 					PatchFunc: NewServer,
-					TargetFunc: func(*water.Interface, string, string, int, int) (Svc, error) {
+					TargetFunc: func(*water.Interface, string, string, string, int, int) (Svc, error) {
 						return mockSvc, nil
 					},
 				},

@@ -17,9 +17,9 @@ const (
 	HDR_FLG_DAT    uint16 = 0x1b00 | (0x01 << 3)
 	HDR_FLG_FIN    uint16 = 0x1b00 | (0x01 << 4)
 
-	MAX_FRG_SIZE = 4096
-	HDR_LEN      = 6
-	MIN_PLEN     = 12 // Min payload length = Min ethernet traffic length - header sum(eth+ip+udp+VT) = 64 - 18 - 20 - 8 - 6
+	MAX_FRG_SIZE int = 4096
+	HDR_LEN      int = 6
+	MIN_PLEN     int = 12 // Min payload length = Min ethernet traffic length - header sum(eth+ip+udp+VT) = 64 - 18 - 20 - 8 - 6
 )
 
 type VTHeader struct {
