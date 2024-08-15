@@ -1,0 +1,5 @@
+target: 10.67.0.254:6123
+key: 0123456789ABCDEF
+log-level: debug
+user: user1
+passwd: password

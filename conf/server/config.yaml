@@ -1,0 +1,15 @@
+port: 6123
+ip: 192.168.203.254/24
+log-level: debug
+key: 0123456789ABCDEF
+ip-range: 192.168.203.100-192.168.203.200
+pre-up:
+  - iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+post-down:
+  - iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE
+routes:
+  - cidr: 0.0.0.0/0
+    nexthop: SERVER
+web:
+  enable: true
+  port: 8000
