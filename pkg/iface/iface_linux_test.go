@@ -26,8 +26,14 @@ func TestSetupTun(t *testing.T) {
 		return
 	}
 
+	addr, err := netlink.ParseAddr("192.168.1.1/24")
+	if err != nil {
+		t.Errorf("Parse addr %s", err)
+		return
+	}
+
 	type args struct {
-		addr string
+		addr *netlink.Addr
 	}
 	tests := []struct {
 		name      string
@@ -38,7 +44,7 @@ func TestSetupTun(t *testing.T) {
 	}{
 		{
 			name:    "ok",
-			args:    args{addr: "192.168.1.1/24"},
+			args:    args{addr: addr},
 			want:    fakeIface,
 			wantErr: false,
 			patchList: []*PatchObj{
@@ -52,7 +58,7 @@ func TestSetupTun(t *testing.T) {
 		},
 		{
 			name:    "set link up failed",
-			args:    args{addr: "192.168.1.1/24"},
+			args:    args{addr: addr},
 			want:    nil,
 			wantErr: true,
 			patchList: []*PatchObj{
@@ -66,7 +72,7 @@ func TestSetupTun(t *testing.T) {
 		},
 		{
 			name:    "add ipv4 addr failed",
-			args:    args{addr: "192.168.1.1/24"},
+			args:    args{addr: addr},
 			want:    nil,
 			wantErr: true,
 			patchList: []*PatchObj{
@@ -80,7 +86,7 @@ func TestSetupTun(t *testing.T) {
 		},
 		{
 			name:    "tun not found",
-			args:    args{addr: "192.168.1.1/24"},
+			args:    args{addr: addr},
 			want:    nil,
 			wantErr: true,
 			patchList: []*PatchObj{
@@ -94,7 +100,7 @@ func TestSetupTun(t *testing.T) {
 		},
 		{
 			name:    "create tun error",
-			args:    args{addr: "192.168.1.1/24"},
+			args:    args{addr: addr},
 			want:    nil,
 			wantErr: true,
 			patchList: []*PatchObj{
@@ -105,13 +111,6 @@ func TestSetupTun(t *testing.T) {
 					},
 				},
 			},
-		},
-		{
-			name:      "address format error",
-			args:      args{addr: "192.168.1.1"},
-			want:      nil,
-			wantErr:   true,
-			patchList: make([]*PatchObj, 0),
 		},
 	}
 	for _, tt := range tests {

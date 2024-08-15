@@ -29,7 +29,7 @@ type ServerConfig struct {
 	IP         string `yaml:"ip" validate:"required,validateIPv4Addr"`
 	LogLevel   string `yaml:"log-level" default:"info"`
 	Key        string `yaml:"key" validate:"required,validateKeyLen"`
-	IPPRange   string `yaml:"ip-range" validate:"required"`
+	IPRange    string `yaml:"ip-range" validate:"required"`
 	*WebConfig `yaml:"web"`
 	Routes     []*RoutesConfig `yaml:"routes"`
 	PreUp      []string        `yaml:"pre-up"`
