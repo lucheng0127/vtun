@@ -83,6 +83,8 @@ func (mgr *EndpointMgr) NewEP(conn *net.UDPConn, raddr *net.UDPAddr, user string
 	mgr.EPIPMap[ipKey] = addrKey
 	mgr.MLock.Unlock()
 
+	// TODO: Start countdown
+
 	return nil
 }
 

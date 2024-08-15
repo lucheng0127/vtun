@@ -13,6 +13,12 @@ import (
 	"github.com/vishvananda/netlink"
 )
 
+type Svc interface {
+	Launch() error
+	Teardown()
+	HandleSignal(chan os.Signal)
+}
+
 func Run(cCtx *cli.Context) error {
 	// Parse config
 	cfgDir := cCtx.String("config-dir")

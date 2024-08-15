@@ -13,12 +13,6 @@ import (
 	"github.com/songgao/water"
 )
 
-type Svc interface {
-	Launch() error
-	Teardown()
-	HandleSignal(chan os.Signal)
-}
-
 type Server struct {
 	Iface   *water.Interface
 	Port    int
@@ -87,7 +81,9 @@ func (svc *Server) Launch() error {
 
 		switch flag {
 		case protocol.HDR_FLG_REQ:
-			svc.HandleReq(payload, raddr)
+			if err := svc.HandleReq(payload, raddr); err != nil {
+				log.Error(err)
+			}
 		case protocol.HDR_FLG_PSH:
 			svc.HandlePsh(raddr)
 		case protocol.HDR_FLG_DAT:
