@@ -4,28 +4,8 @@ import (
 	"net"
 	"strings"
 
-	"github.com/lucheng0127/vtun/pkg/protocol"
 	log "github.com/sirupsen/logrus"
 )
-
-func (svc *Server) SendPkt(pkt *protocol.VTPacket, raddr *net.UDPAddr) error {
-	stream, err := pkt.Encode()
-	if err != nil {
-		return err
-	}
-
-	_, err = svc.Conn.WriteToUDP(stream, raddr)
-	return err
-}
-
-func (svc *Server) SendAck(msg string, raddr *net.UDPAddr) error {
-	pkt, err := protocol.NewVTPkt(protocol.HDR_FLG_ACK, []byte(msg), svc.Cipher)
-	if err != nil {
-		return err
-	}
-
-	return svc.SendPkt(pkt, raddr)
-}
 
 func (svc *Server) HandleReq(payload []byte, raddr *net.UDPAddr) error {
 	// Do Auth
@@ -58,11 +38,32 @@ func (svc *Server) HandleReq(payload []byte, raddr *net.UDPAddr) error {
 		return svc.SendAck(err.Error(), raddr)
 	}
 
+	// Monitor heartbeat for Endpoint
+	svc.HbMgr.MonitorEPByIP(ipAddr.String())
+
 	return svc.SendAck(ipAddr.String(), raddr)
 }
 
-func (svc *Server) HandlePsh(raddr *net.UDPAddr) {}
+func (svc *Server) HandlePsh(raddr *net.UDPAddr) {
+	ep := svc.EPMgr.GetEPByAddr(raddr.String())
+	if ep == nil {
+		return
+	}
+
+	em := svc.HbMgr.GetEPMonitorByIP(ep.IP.String())
+
+	log.Debugf("hearbeat received from %s ip %s", raddr.String(), ep.IP.String())
+	em.Beat <- "ping"
+}
 
 func (svc *Server) HandleDat(payload []byte, raddr *net.UDPAddr) {}
 
-func (svc *Server) HandleFin(raddr *net.UDPAddr) {}
+func (svc *Server) HandleFin(raddr *net.UDPAddr) {
+	ep := svc.EPMgr.GetEPByAddr(raddr.String())
+	if ep == nil {
+		return
+	}
+
+	svc.HbMgr.StopMonitorEPByIP(ep.IP.String())
+	svc.CloseEPByIP(ep.IP.String())
+}

@@ -39,6 +39,15 @@ func NewEPMgr() *EndpointMgr {
 	}
 }
 
+func (mgr *EndpointMgr) GetEPByIP(ip string) *Endpoint {
+	addr := mgr.GetEPAddrByIP(ip)
+	if addr == "" {
+		return nil
+	}
+
+	return mgr.GetEPByAddr(addr)
+}
+
 func (mgr *EndpointMgr) GetEPAddrByIP(ip string) string {
 	addr, ok := mgr.EPIPMap[ip]
 	if ok {
@@ -82,8 +91,6 @@ func (mgr *EndpointMgr) NewEP(conn *net.UDPConn, raddr *net.UDPAddr, user string
 	mgr.EPAddrMap[addrKey] = ep
 	mgr.EPIPMap[ipKey] = addrKey
 	mgr.MLock.Unlock()
-
-	// TODO: Start countdown
 
 	return nil
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/lucheng0127/vtun/pkg/protocol"
 	log "github.com/sirupsen/logrus"
 	"github.com/songgao/water"
+	"github.com/vishvananda/netlink"
 )
 
 type Server struct {
@@ -22,6 +23,7 @@ type Server struct {
 	AuthMgr *auth.BaseAuthMgr
 	IPMgr   *endpoint.IPMgr
 	EPMgr   *endpoint.EndpointMgr
+	HbMgr   *HeartbeatMgr
 }
 
 func NewServer(iface *water.Interface, ipRange, userDB, key string, port, maskLen int) (Svc, error) {
@@ -32,6 +34,7 @@ func NewServer(iface *water.Interface, ipRange, userDB, key string, port, maskLe
 	svc.Key = key
 	svc.AuthMgr = &auth.BaseAuthMgr{DB: userDB}
 	svc.EPMgr = endpoint.NewEPMgr()
+	svc.HbMgr = NewHeartbeatMgr(svc)
 
 	ipMgr, err := endpoint.NewIPMgr(ipRange, maskLen)
 	if err != nil {
@@ -101,7 +104,12 @@ func (svc *Server) Launch() error {
 }
 
 func (svc *Server) Teardown() {
-	// TODO: Send FIN
+	// Send FIN to all Endpoint
+	log.Info("teardown server, send FIN pkt to all Endpoint")
+	for ip := range svc.EPMgr.EPIPMap {
+		svc.CloseEPByIP(ip)
+	}
+
 	svc.Conn.Close()
 }
 
@@ -110,4 +118,33 @@ func (svc *Server) HandleSignal(sigChan chan os.Signal) {
 	log.Infof("received signal: %v, stop server", sig)
 	svc.Teardown()
 	os.Exit(0)
+}
+
+func (svc *Server) CloseEPByIP(ip string) {
+	log.Infof("close Endpoint ip %s", ip)
+
+	// Release ip and close Endpoint
+	ep := svc.EPMgr.GetEPByIP(ip)
+	if ep == nil {
+		ipAddr, err := netlink.ParseAddr(ip)
+		if err != nil {
+			log.Errorf("close Endpoint by ip %s %s", ip, err.Error())
+			return
+		}
+
+		svc.IPMgr.ReleaseIP(ipAddr)
+		return
+	}
+
+	// Maybe client close, just send a FIN pkt
+	log.Debugf("send FIN pkt to Endpoint remote address %s, ip %s", ep.RAddr.String(), ep.IP.String())
+	if err := svc.SendFin(ep.RAddr); err != nil {
+		log.Warn(err)
+	}
+
+	svc.IPMgr.ReleaseIP(ep.IP)
+
+	if err := svc.EPMgr.CloseEPByIP(ip); err != nil {
+		log.Error(err)
+	}
 }

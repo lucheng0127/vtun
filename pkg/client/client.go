@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"time"
 
 	"github.com/lucheng0127/vtun/pkg/cipher"
 	"github.com/lucheng0127/vtun/pkg/protocol"
@@ -11,6 +12,10 @@ import (
 	"github.com/songgao/water"
 	"github.com/vishvananda/netlink"
 	"golang.org/x/sync/errgroup"
+)
+
+const (
+	INTERVAL = 5
 )
 
 type Client struct {
@@ -77,7 +82,7 @@ func (c *Client) Launch() error {
 			case protocol.HDR_FLG_DAT:
 				fmt.Println(payload)
 			case protocol.HDR_FLG_FIN:
-				fmt.Println(payload)
+				c.HandleFin()
 			default:
 				continue
 			}
@@ -92,8 +97,24 @@ func (c *Client) Launch() error {
 	return g.Wait()
 }
 
+func (c *Client) SendHeartbeat() {
+	ticker := time.NewTicker(INTERVAL * time.Second)
+
+	for {
+		if err := c.SendPsh(); err != nil {
+			log.Error(err)
+		}
+		log.Debug("Heartbeat sent")
+
+		<-ticker.C
+	}
+}
+
 func (c *Client) Teardown() {
 	// Send fin
+	if err := c.SendFin(); err != nil {
+		log.Error(err)
+	}
 }
 
 func (c *Client) HandleSignal(sigChan chan os.Signal) {
