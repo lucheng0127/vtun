@@ -33,3 +33,12 @@ func (svc *Server) SendFin(raddr *net.UDPAddr) error {
 
 	return svc.SendPkt(pkt, raddr)
 }
+
+func (svc *Server) SendDat(payload []byte, raddr *net.UDPAddr) error {
+	pkt, err := protocol.NewVTPkt(protocol.HDR_FLG_DAT, payload, svc.Cipher)
+	if err != nil {
+		return err
+	}
+
+	return svc.SendPkt(pkt, raddr)
+}

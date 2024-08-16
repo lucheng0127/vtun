@@ -1,7 +1,6 @@
 package client
 
 import (
-	"fmt"
 	"net"
 	"os"
 	"time"
@@ -80,7 +79,14 @@ func (c *Client) Launch() error {
 					return err
 				}
 			case protocol.HDR_FLG_DAT:
-				fmt.Println(payload)
+				if c.Iface == nil {
+					continue
+				}
+
+				// Forward fragement from udp to tun interface
+				if _, err := c.Iface.Write(payload); err != nil {
+					return err
+				}
 			case protocol.HDR_FLG_FIN:
 				c.HandleFin()
 			default:
@@ -94,7 +100,31 @@ func (c *Client) Launch() error {
 		return err
 	}
 
+	// Forward traffic from iface to udp
+	go c.IfaceToNet()
+
 	return g.Wait()
+}
+
+func (c *Client) IfaceToNet() {
+	for {
+		if c.Iface == nil {
+			// Waiting for tun interface ready
+			time.Sleep(1 * time.Second)
+			continue
+		}
+
+		var buf [protocol.MAX_FRG_SIZE]byte
+
+		n, err := c.Iface.Read(buf[:])
+		if err != nil {
+			log.Error(err)
+		}
+
+		if err := c.SendDat(buf[:n]); err != nil {
+			log.Error(err)
+		}
+	}
 }
 
 func (c *Client) SendHeartbeat() {

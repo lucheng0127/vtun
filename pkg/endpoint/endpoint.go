@@ -6,18 +6,15 @@ import (
 	"sync"
 	"time"
 
-	"github.com/lucheng0127/vtun/pkg/protocol"
 	"github.com/vishvananda/netlink"
 )
 
 // An Endpoint represent a authed client
 type Endpoint struct {
-	Conn      *net.UDPConn
 	RAddr     *net.UDPAddr
 	User      string
 	IP        *netlink.Addr
 	LoginTime string
-	TXQueue   chan *protocol.VTPacket
 }
 
 func (ep *Endpoint) Close() error {
@@ -68,12 +65,10 @@ func (mgr *EndpointMgr) GetEPByAddr(addr string) *Endpoint {
 
 func (mgr *EndpointMgr) NewEP(conn *net.UDPConn, raddr *net.UDPAddr, user string, ip *netlink.Addr) error {
 	ep := &Endpoint{
-		Conn:      conn,
 		RAddr:     raddr,
 		User:      user,
 		IP:        ip,
 		LoginTime: time.Now().Format("2006-01-02 15:04:05"),
-		TXQueue:   make(chan *protocol.VTPacket),
 	}
 	addrKey := raddr.String()
 	ipKey := ip.String()

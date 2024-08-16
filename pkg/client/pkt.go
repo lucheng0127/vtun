@@ -42,3 +42,12 @@ func (c *Client) SendFin() error {
 
 	return c.SendPkt(pkt)
 }
+
+func (c *Client) SendDat(payload []byte) error {
+	pkt, err := protocol.NewVTPkt(protocol.HDR_FLG_DAT, payload, c.Cipher)
+	if err != nil {
+		return err
+	}
+
+	return c.SendPkt(pkt)
+}
