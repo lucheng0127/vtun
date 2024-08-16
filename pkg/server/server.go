@@ -11,6 +11,7 @@ import (
 	"github.com/lucheng0127/vtun/pkg/protocol"
 	log "github.com/sirupsen/logrus"
 	"github.com/songgao/water"
+	"github.com/songgao/water/waterutil"
 	"github.com/vishvananda/netlink"
 )
 
@@ -67,6 +68,9 @@ func (svc *Server) Launch() error {
 	}
 	svc.Cipher = aesCipher
 
+	// Forward local tun traffic to net
+	go svc.IfaceToNet()
+
 	// Handle connection
 	for {
 		var buf [protocol.MAX_FRG_SIZE]byte
@@ -90,7 +94,7 @@ func (svc *Server) Launch() error {
 		case protocol.HDR_FLG_PSH:
 			svc.HandlePsh(raddr)
 		case protocol.HDR_FLG_DAT:
-			svc.HandleDat(payload, raddr)
+			svc.HandleDat(payload)
 		case protocol.HDR_FLG_FIN:
 			svc.HandleFin(raddr)
 		default:
@@ -146,5 +150,36 @@ func (svc *Server) CloseEPByIP(ip string) {
 
 	if err := svc.EPMgr.CloseEPByIP(ip); err != nil {
 		log.Error(err)
+	}
+}
+
+func (svc *Server) GetDstEpByDstIP(dst net.IP) *endpoint.Endpoint {
+	ipKey := fmt.Sprintf("%s/%d", dst.String(), svc.IPMgr.MaskLen)
+	ep := svc.EPMgr.GetEPByIP(ipKey)
+	return ep
+}
+
+func (svc *Server) IfaceToNet() {
+	for {
+		var buf [protocol.MAX_FRG_SIZE]byte
+
+		n, err := svc.Iface.Read(buf[:])
+		if err != nil {
+			log.Error(err)
+			continue
+		}
+
+		dst := waterutil.IPv4Destination(buf[:n])
+		dstEp := svc.GetDstEpByDstIP(dst)
+
+		if dstEp != nil {
+			if err := svc.SendDat(buf[:n], dstEp.RAddr); err != nil {
+				log.Errorf("forward traffic dst to %s to Endpoint %s %s", dst.String(), dstEp.RAddr.String(), err.Error())
+				continue
+			}
+
+		}
+
+		// If dstEp is nil, it means packet from local tun dst unknow
 	}
 }

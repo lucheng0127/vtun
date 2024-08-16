@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lucheng0127/vtun/pkg/protocol"
 	"github.com/vishvananda/netlink"
 )
 
@@ -20,20 +19,16 @@ func TestEndpointMgr_NewEP(t *testing.T) {
 	mgr := NewEPMgr()
 	mgr.EPIPMap[ep1IP.String()] = ep1Addr.String()
 	mgr.EPAddrMap[ep1Addr.String()] = &Endpoint{
-		Conn:      new(net.UDPConn),
 		RAddr:     new(net.UDPAddr),
 		User:      "ep1User",
 		IP:        ep1IP,
 		LoginTime: time.Now().Format("2006-01-02 15:04:05"),
-		TXQueue:   make(chan *protocol.VTPacket),
 	}
 	mgr.EPAddrMap[ep2Addr.String()] = &Endpoint{
-		Conn:      new(net.UDPConn),
 		RAddr:     new(net.UDPAddr),
 		User:      "ep2User",
 		IP:        ep2IP,
 		LoginTime: time.Now().Format("2006-01-02 15:04:05"),
-		TXQueue:   make(chan *protocol.VTPacket),
 	}
 
 	// Ep waiting for add
