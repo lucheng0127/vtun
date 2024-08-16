@@ -6,10 +6,15 @@ import (
 	"encoding/csv"
 	"fmt"
 	"os"
+	"sync"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type BaseAuthMgr struct {
-	DB string // User database file, csv format: <username>,<passwd base64 encode>
+	DB         string // User database file, csv format: <username>,<passwd base64 encode>
+	AuthedUser map[string]string
+	MLock      sync.Mutex
 }
 
 func (mgr *BaseAuthMgr) GetUsers(db string) ([][]string, error) {
@@ -79,6 +84,10 @@ func (mgr *BaseAuthMgr) AddUser(user, passwd string) error {
 }
 
 func (mgr *BaseAuthMgr) ValidateUser(user, passwd string) error {
+	if _, ok := mgr.AuthedUser[user]; ok {
+		return fmt.Errorf("user %s already logged in", user)
+	}
+
 	users, err := mgr.GetUsers(mgr.DB)
 	if err != nil {
 		return err
@@ -91,6 +100,9 @@ func (mgr *BaseAuthMgr) ValidateUser(user, passwd string) error {
 
 		if uinfo[0] == user {
 			if uinfo[1] == base64.StdEncoding.EncodeToString([]byte(passwd)) {
+				mgr.MLock.Lock()
+				mgr.AuthedUser[user] = "OK"
+				mgr.MLock.Unlock()
 				return nil
 			}
 
@@ -99,4 +111,11 @@ func (mgr *BaseAuthMgr) ValidateUser(user, passwd string) error {
 	}
 
 	return fmt.Errorf("user %s not exist", user)
+}
+
+func (mgr *BaseAuthMgr) LogoutUser(user string) {
+	mgr.MLock.Lock()
+	delete(mgr.AuthedUser, user)
+	mgr.MLock.Unlock()
+	log.Infof("user %s logged out", user)
 }

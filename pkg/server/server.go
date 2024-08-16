@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"sync"
 
 	"github.com/lucheng0127/vtun/pkg/auth"
 	"github.com/lucheng0127/vtun/pkg/cipher"
@@ -33,7 +34,11 @@ func NewServer(iface *water.Interface, ipRange, userDB, key string, port, maskLe
 	svc.Iface = iface
 	svc.Port = port
 	svc.Key = key
-	svc.AuthMgr = &auth.BaseAuthMgr{DB: userDB}
+	svc.AuthMgr = &auth.BaseAuthMgr{
+		DB:         userDB,
+		AuthedUser: map[string]string{},
+		MLock:      sync.Mutex{},
+	}
 	svc.EPMgr = endpoint.NewEPMgr()
 	svc.HbMgr = NewHeartbeatMgr(svc)
 
@@ -147,6 +152,7 @@ func (svc *Server) CloseEPByIP(ip string) {
 	}
 
 	svc.IPMgr.ReleaseIP(ep.IP)
+	svc.AuthMgr.LogoutUser(ep.User)
 
 	if err := svc.EPMgr.CloseEPByIP(ip); err != nil {
 		log.Error(err)
@@ -154,6 +160,7 @@ func (svc *Server) CloseEPByIP(ip string) {
 }
 
 func (svc *Server) GetDstEpByDstIP(dst net.IP) *endpoint.Endpoint {
+	// TODO: Endpoint add allowed ip cidr, if dst to allowed ip, send to target endpoint
 	ipKey := fmt.Sprintf("%s/%d", dst.String(), svc.IPMgr.MaskLen)
 	ep := svc.EPMgr.GetEPByIP(ipKey)
 	return ep
