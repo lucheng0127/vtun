@@ -18,7 +18,7 @@ type Endpoint struct {
 }
 
 func (ep *Endpoint) Close() error {
-	// TODO: Implement it if need
+	// Do cleanup if need
 	return nil
 }
 

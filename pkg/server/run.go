@@ -7,7 +7,6 @@ import (
 	"syscall"
 
 	"github.com/lucheng0127/vtun/pkg/config"
-	"github.com/lucheng0127/vtun/pkg/iface"
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 	"github.com/vishvananda/netlink"
@@ -48,16 +47,9 @@ func Run(cCtx *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	maskLen, _ := ipAddr.IPNet.Mask.Size()
-
-	// Setup local tun
-	iface, err := iface.SetupTun(ipAddr)
-	if err != nil {
-		return err
-	}
 
 	// Create server
-	svc, err := NewServer(iface, cfg.IPRange, userDB, cfg.Key, cfg.Port, maskLen)
+	svc, err := NewServer(cfg.IPRange, userDB, cfg.Key, cfg.Port, ipAddr)
 	if err != nil {
 		return err
 	}

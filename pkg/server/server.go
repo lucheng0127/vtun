@@ -9,6 +9,7 @@ import (
 	"github.com/lucheng0127/vtun/pkg/auth"
 	"github.com/lucheng0127/vtun/pkg/cipher"
 	"github.com/lucheng0127/vtun/pkg/endpoint"
+	"github.com/lucheng0127/vtun/pkg/iface"
 	"github.com/lucheng0127/vtun/pkg/protocol"
 	log "github.com/sirupsen/logrus"
 	"github.com/songgao/water"
@@ -18,6 +19,7 @@ import (
 
 type Server struct {
 	Iface   *water.Interface
+	IPAddr  *netlink.Addr
 	Port    int
 	Key     string
 	Conn    *net.UDPConn
@@ -26,12 +28,13 @@ type Server struct {
 	IPMgr   *endpoint.IPMgr
 	EPMgr   *endpoint.EndpointMgr
 	HbMgr   *HeartbeatMgr
+	DstMgr  *DstMgr
 }
 
-func NewServer(iface *water.Interface, ipRange, userDB, key string, port, maskLen int) (Svc, error) {
+func NewServer(ipRange, userDB, key string, port int, ipAddr *netlink.Addr) (Svc, error) {
 	svc := new(Server)
 
-	svc.Iface = iface
+	svc.IPAddr = ipAddr
 	svc.Port = port
 	svc.Key = key
 	svc.AuthMgr = &auth.BaseAuthMgr{
@@ -42,16 +45,32 @@ func NewServer(iface *water.Interface, ipRange, userDB, key string, port, maskLe
 	svc.EPMgr = endpoint.NewEPMgr()
 	svc.HbMgr = NewHeartbeatMgr(svc)
 
+	maskLen, _ := ipAddr.IPNet.Mask.Size()
 	ipMgr, err := endpoint.NewIPMgr(ipRange, maskLen)
 	if err != nil {
 		return nil, err
 	}
 
+	dstMgr := &DstMgr{
+		InNet:    ipAddr.IPNet,
+		ExNetMap: make(map[*net.IPNet]*endpoint.Endpoint),
+		MLock:    sync.Mutex{},
+		Svc:      svc,
+	}
+
+	svc.DstMgr = dstMgr
 	svc.IPMgr = ipMgr
 	return svc, nil
 }
 
 func (svc *Server) Launch() error {
+	// Setup local tun
+	iface, err := iface.SetupTun(svc.IPAddr)
+	if err != nil {
+		return err
+	}
+	svc.Iface = iface
+
 	// Listen udp port
 	addr, err := net.ResolveUDPAddr("udp4", fmt.Sprintf(":%d", svc.Port))
 	if err != nil {
@@ -160,10 +179,8 @@ func (svc *Server) CloseEPByIP(ip string) {
 }
 
 func (svc *Server) GetDstEpByDstIP(dst net.IP) *endpoint.Endpoint {
-	// TODO: Endpoint add allowed ip cidr, if dst to allowed ip, send to target endpoint
-	ipKey := fmt.Sprintf("%s/%d", dst.String(), svc.IPMgr.MaskLen)
-	ep := svc.EPMgr.GetEPByIP(ipKey)
-	return ep
+	// Endpoint add allowed ip cidr, if dst to allowed ip, send to target endpoint
+	return svc.DstMgr.GetDstEpByDstIP(dst)
 }
 
 func (svc *Server) IfaceToNet() {
