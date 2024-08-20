@@ -25,7 +25,7 @@ type Client struct {
 	Conn       *net.UDPConn
 	IPAddr     *netlink.Addr
 	Iface      *water.Interface
-	AllowedIPs []*net.IPNet
+	AllowedIPs []string
 }
 
 func NewClient(target, key, user, passwd string, allowedIPs []string) (C, error) {
@@ -33,16 +33,7 @@ func NewClient(target, key, user, passwd string, allowedIPs []string) (C, error)
 		Target:     target,
 		User:       user,
 		Passwd:     passwd,
-		AllowedIPs: make([]*net.IPNet, 0),
-	}
-
-	for _, ipStr := range allowedIPs {
-		_, ipNet, err := net.ParseCIDR(ipStr)
-		if err != nil {
-			return nil, err
-		}
-
-		c.AllowedIPs = append(c.AllowedIPs, ipNet)
+		AllowedIPs: allowedIPs,
 	}
 
 	aesCipher, err := cipher.NewAESCipher(key)
@@ -108,6 +99,11 @@ func (c *Client) Launch() error {
 
 	// Send REQ to auth and get ip
 	if err := c.SendReq(); err != nil {
+		return err
+	}
+
+	// Sync allowed-ips
+	if err := c.SendIps(); err != nil {
 		return err
 	}
 

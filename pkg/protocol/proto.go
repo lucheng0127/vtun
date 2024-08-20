@@ -16,6 +16,8 @@ const (
 	HDR_FLG_PSH    uint16 = 0x1b00 | (0x01 << 2)
 	HDR_FLG_DAT    uint16 = 0x1b00 | (0x01 << 3)
 	HDR_FLG_FIN    uint16 = 0x1b00 | (0x01 << 4)
+	HDR_FLG_IPS    uint16 = 0x1b00 | (0x01 << 5)
+	HDR_FLG_ROU    uint16 = 0x1b00 | (0x01 << 6)
 
 	MAX_FRG_SIZE int = 4096
 	HDR_LEN      int = 6

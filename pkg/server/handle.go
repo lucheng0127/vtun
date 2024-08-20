@@ -4,6 +4,7 @@ import (
 	"net"
 	"strings"
 
+	"github.com/lucheng0127/vtun/pkg/utils"
 	log "github.com/sirupsen/logrus"
 	"github.com/songgao/water/waterutil"
 )
@@ -86,4 +87,20 @@ func (svc *Server) HandleFin(raddr *net.UDPAddr) {
 
 	svc.HbMgr.StopMonitorEPByIP(ep.IP.String())
 	svc.CloseEPByIP(ep.IP.String())
+}
+
+func (svc *Server) HandleIps(epAddr string, payload []byte) {
+	ep := svc.EPMgr.GetEPByAddr(epAddr)
+	if ep == nil {
+		return
+	}
+
+	allowedIPs, err := utils.ParseAllowedIPs(string(payload))
+	if err != nil {
+		log.Errorf("invalidate allowed ip info %s", err.Error())
+		return
+	}
+
+	log.Infof("add allowed ip %s for endpoint with ip %s remote address %s", string(payload), ep.IP.String(), ep.RAddr.String())
+	svc.DstMgr.AddEpExNet(ep, allowedIPs...)
 }

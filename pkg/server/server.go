@@ -121,11 +121,14 @@ func (svc *Server) Launch() error {
 			svc.HandleDat(payload)
 		case protocol.HDR_FLG_FIN:
 			svc.HandleFin(raddr)
+		case protocol.HDR_FLG_IPS:
+			svc.HandleIps(raddr.String(), payload)
 		default:
 			// For server only hand req for user login
 			// psh for keepalive
 			// data for forward
 			// fin for close endpoint
+			// ips for sync endpoint allowed-ips info
 			continue
 		}
 	}
@@ -163,6 +166,10 @@ func (svc *Server) CloseEPByIP(ip string) {
 		svc.IPMgr.ReleaseIP(ipAddr)
 		return
 	}
+
+	// Release allowed ip info with DstMgr
+	svc.DstMgr.DelExNetByEp(ep)
+	log.Infof("delete endpoint ip %s remote address %s allowed ip infos from dst mgr", ep.IP.String(), ep.RAddr.String())
 
 	// Maybe client close, just send a FIN pkt
 	log.Debugf("send FIN pkt to Endpoint remote address %s, ip %s", ep.RAddr.String(), ep.IP.String())
