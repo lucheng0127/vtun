@@ -1,0 +1,7 @@
+target: 10.67.0.254:6123
+key: 0123456789ABCDEF
+log-level: debug
+user: user2
+passwd: password
+allowed-ips:
+  - 10.68.0.0/24

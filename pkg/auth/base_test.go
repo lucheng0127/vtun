@@ -2,6 +2,7 @@ package auth
 
 import (
 	"os"
+	"sync"
 	"testing"
 
 	"bou.ke/monkey"
@@ -43,7 +44,7 @@ func TestBaseAuthMgr_ValidateUser(t *testing.T) {
 		},
 	}
 
-	mgr := &BaseAuthMgr{DB: "fake db file"}
+	mgr := &BaseAuthMgr{DB: "fake db file", AuthedUser: map[string]string{}, MLock: sync.Mutex{}}
 	monkey.Patch(os.ReadFile, func(string) ([]byte, error) {
 		return []byte(`user1,TGF1Z2hPdXRMb3VkbHk=
 user2,TGF1Z2hPdXRMb3VkbHk=`), nil

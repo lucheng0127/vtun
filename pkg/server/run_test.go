@@ -7,8 +7,8 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/lucheng0127/vtun/pkg/config"
 	mock_server "github.com/lucheng0127/vtun/pkg/mock/server"
-	"github.com/songgao/water"
 	"github.com/urfave/cli/v2"
+	"github.com/vishvananda/netlink"
 )
 
 type PatchObj struct {
@@ -77,7 +77,7 @@ func TestRun(t *testing.T) {
 				},
 				{
 					PatchFunc: NewServer,
-					TargetFunc: func(*water.Interface, string, string, string, int, int) (Svc, error) {
+					TargetFunc: func(string, string, string, int, *netlink.Addr) (Svc, error) {
 						return mockSvc, nil
 					},
 				},

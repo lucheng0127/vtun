@@ -9,11 +9,12 @@ import (
 )
 
 type ClientConfig struct {
-	Target   string `yaml:"target"`
-	Key      string `yaml:"key" validate:"required,validateKeyLen"`
-	User     string `yaml:"user"`
-	Passwd   string `yaml:"passwd"`
-	LogLevel string `yaml:"log-level"`
+	Target     string   `yaml:"target"`
+	Key        string   `yaml:"key" validate:"required,validateKeyLen"`
+	User       string   `yaml:"user"`
+	Passwd     string   `yaml:"passwd"`
+	LogLevel   string   `yaml:"log-level"`
+	AllowedIPs []string `yaml:"allowed-ips" validate:"dive,validateCIDR"`
 }
 
 func LoadCleintConfigFile(path string) (*ClientConfig, error) {
@@ -35,6 +36,7 @@ func LoadCleintConfigFile(path string) (*ClientConfig, error) {
 
 	cfgValidator := validator.New()
 	cfgValidator.RegisterValidation("validateKeyLen", ValidateKeyLength)
+	cfgValidator.RegisterValidation("validateCIDR", ValidateCIDR)
 
 	if err := cfgValidator.Struct(cfg); err != nil {
 		return nil, err

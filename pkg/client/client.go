@@ -18,20 +18,31 @@ const (
 )
 
 type Client struct {
-	Target string
-	Cipher cipher.Cipher
-	User   string
-	Passwd string
-	Conn   *net.UDPConn
-	IPAddr *netlink.Addr
-	Iface  *water.Interface
+	Target     string
+	Cipher     cipher.Cipher
+	User       string
+	Passwd     string
+	Conn       *net.UDPConn
+	IPAddr     *netlink.Addr
+	Iface      *water.Interface
+	AllowedIPs []*net.IPNet
 }
 
-func NewClient(target, key, user, passwd string) (C, error) {
+func NewClient(target, key, user, passwd string, allowedIPs []string) (C, error) {
 	c := &Client{
-		Target: target,
-		User:   user,
-		Passwd: passwd,
+		Target:     target,
+		User:       user,
+		Passwd:     passwd,
+		AllowedIPs: make([]*net.IPNet, 0),
+	}
+
+	for _, ipStr := range allowedIPs {
+		_, ipNet, err := net.ParseCIDR(ipStr)
+		if err != nil {
+			return nil, err
+		}
+
+		c.AllowedIPs = append(c.AllowedIPs, ipNet)
 	}
 
 	aesCipher, err := cipher.NewAESCipher(key)
