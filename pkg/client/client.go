@@ -8,7 +8,6 @@ import (
 	"github.com/lucheng0127/vtun/pkg/cipher"
 	"github.com/lucheng0127/vtun/pkg/protocol"
 	log "github.com/sirupsen/logrus"
-	"github.com/songgao/water"
 	"github.com/vishvananda/netlink"
 	"golang.org/x/sync/errgroup"
 )
@@ -17,6 +16,13 @@ const (
 	INTERVAL = 5
 )
 
+type IFace interface {
+	Close() error
+	Name() string
+	Read([]byte) (int, error)
+	Write([]byte) (int, error)
+}
+
 type Client struct {
 	Target     string
 	Cipher     cipher.Cipher
@@ -24,7 +30,7 @@ type Client struct {
 	Passwd     string
 	Conn       *net.UDPConn
 	IPAddr     *netlink.Addr
-	Iface      *water.Interface
+	Iface      IFace
 	AllowedIPs []string
 }
 

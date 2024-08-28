@@ -12,13 +12,19 @@ import (
 	"github.com/lucheng0127/vtun/pkg/iface"
 	"github.com/lucheng0127/vtun/pkg/protocol"
 	log "github.com/sirupsen/logrus"
-	"github.com/songgao/water"
 	"github.com/songgao/water/waterutil"
 	"github.com/vishvananda/netlink"
 )
 
+type IFace interface {
+	Close() error
+	Name() string
+	Read([]byte) (int, error)
+	Write([]byte) (int, error)
+}
+
 type Server struct {
-	Iface   *water.Interface
+	Iface   IFace
 	IPAddr  *netlink.Addr
 	Port    int
 	Key     string
