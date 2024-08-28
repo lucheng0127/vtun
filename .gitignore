@@ -2,4 +2,6 @@ test
 main
 main.darwin
 main.exe
+pkg/utils/wintun.dll
+build
 .vscode

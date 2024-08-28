@@ -1,12 +1,15 @@
 package client
 
 import (
+	"fmt"
 	"net"
 	"os"
+	"runtime"
 	"time"
 
 	"github.com/lucheng0127/vtun/pkg/cipher"
 	"github.com/lucheng0127/vtun/pkg/protocol"
+	"github.com/lucheng0127/vtun/pkg/utils"
 	log "github.com/sirupsen/logrus"
 	"github.com/vishvananda/netlink"
 	"golang.org/x/sync/errgroup"
@@ -52,6 +55,12 @@ func NewClient(target, key, user, passwd string, allowedIPs []string) (C, error)
 }
 
 func (c *Client) Launch() error {
+	if runtime.GOOS == "windows" {
+		if err := utils.ExtractWintun(); err != nil {
+			return fmt.Errorf("extract wintun.dll %s", err.Error())
+		}
+	}
+
 	udpAddr, err := net.ResolveUDPAddr("udp4", c.Target)
 	if err != nil {
 		return err
