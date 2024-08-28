@@ -3,3 +3,5 @@ key: 0123456789ABCDEF
 log-level: debug
 user: user1
 passwd: password
+routes:
+  - 10.68.0.0/24

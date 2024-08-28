@@ -27,6 +27,7 @@ func (c *Client) HandleAck(authChan chan string, payload []byte) error {
 	}
 
 	c.Iface = iface
+	c.IPAddr = ipAddr
 
 	// Start send heartbeat
 	go c.SendHeartbeat()

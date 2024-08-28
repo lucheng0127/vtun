@@ -39,7 +39,7 @@ func Run(cCtx *cli.Context) error {
 
 	log.SetOutput(os.Stdout)
 
-	client, err := NewClient(cfg.Target, cfg.Key, cfg.User, cfg.Passwd, cfg.AllowedIPs)
+	client, err := NewClient(cfg.Target, cfg.Key, cfg.User, cfg.Passwd, cfg.AllowedIPs, cfg.Routes)
 	if err != nil {
 		return err
 	}

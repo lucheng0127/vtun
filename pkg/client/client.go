@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/lucheng0127/vtun/pkg/cipher"
@@ -30,14 +31,25 @@ type Client struct {
 	IPAddr     *netlink.Addr
 	Iface      iface.IFace
 	AllowedIPs []string
+	Routes     []*net.IPNet
 }
 
-func NewClient(target, key, user, passwd string, allowedIPs []string) (C, error) {
+func NewClient(target, key, user, passwd string, allowedIPs, routes []string) (C, error) {
 	c := &Client{
 		Target:     target,
 		User:       user,
 		Passwd:     passwd,
 		AllowedIPs: allowedIPs,
+		Routes:     make([]*net.IPNet, 0),
+	}
+
+	for _, route := range routes {
+		_, rNet, err := net.ParseCIDR(route)
+		if err != nil {
+			return nil, err
+		}
+
+		c.Routes = append(c.Routes, rNet)
 	}
 
 	aesCipher, err := cipher.NewAESCipher(key)
@@ -138,6 +150,9 @@ func (c *Client) Launch() error {
 	// Forward traffic from iface to udp
 	go c.IfaceToNet()
 
+	// Post up
+	go c.PostUp()
+
 	return g.Wait()
 }
 
@@ -159,6 +174,32 @@ func (c *Client) IfaceToNet() {
 		if err := c.SendDat(buf[:n]); err != nil {
 			log.Error(err)
 		}
+	}
+}
+
+func (c *Client) RouteAdd() error {
+	for {
+		// Waiting for login finished
+		if c.Iface != nil {
+			break
+		}
+
+		time.Sleep(50 * time.Microsecond)
+	}
+
+	// Call iface to add route
+	ip := strings.Split(c.IPAddr.String(), "/")[0]
+	if err := iface.RoutiesAdd(c.Iface.Name(), c.Routes, ip); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *Client) PostUp() {
+	// Add routes
+	if err := c.RouteAdd(); err != nil {
+		log.Warnf("post up route add %s", err.Error())
 	}
 }
 

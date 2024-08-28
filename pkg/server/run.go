@@ -49,7 +49,7 @@ func Run(cCtx *cli.Context) error {
 	}
 
 	// Create server
-	svc, err := NewServer(cfg.IPRange, userDB, cfg.Key, cfg.Port, ipAddr)
+	svc, err := NewServer(cfg.IPRange, userDB, cfg.Key, cfg.Port, ipAddr, cfg.Routes)
 	if err != nil {
 		return err
 	}

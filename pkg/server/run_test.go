@@ -77,7 +77,7 @@ func TestRun(t *testing.T) {
 				},
 				{
 					PatchFunc: NewServer,
-					TargetFunc: func(string, string, string, int, *netlink.Addr) (Svc, error) {
+					TargetFunc: func(string, string, string, int, *netlink.Addr, []string) (Svc, error) {
 						return mockSvc, nil
 					},
 				},

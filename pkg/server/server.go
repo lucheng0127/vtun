@@ -28,10 +28,21 @@ type Server struct {
 	EPMgr   *endpoint.EndpointMgr
 	HbMgr   *HeartbeatMgr
 	DstMgr  *DstMgr
+	Routes  []*net.IPNet
 }
 
-func NewServer(ipRange, userDB, key string, port int, ipAddr *netlink.Addr) (Svc, error) {
+func NewServer(ipRange, userDB, key string, port int, ipAddr *netlink.Addr, routes []string) (Svc, error) {
 	svc := new(Server)
+	svc.Routes = make([]*net.IPNet, 0)
+
+	for _, route := range routes {
+		_, rNet, err := net.ParseCIDR(route)
+		if err != nil {
+			return nil, err
+		}
+
+		svc.Routes = append(svc.Routes, rNet)
+	}
 
 	svc.IPAddr = ipAddr
 	svc.Port = port
@@ -60,6 +71,17 @@ func NewServer(ipRange, userDB, key string, port int, ipAddr *netlink.Addr) (Svc
 	svc.DstMgr = dstMgr
 	svc.IPMgr = ipMgr
 	return svc, nil
+}
+
+func (svc *Server) RouteAdd() error {
+	return iface.RoutiesAdd(svc.Iface.Name(), svc.Routes, "")
+}
+
+func (svc *Server) PostUp() {
+	// Add routes
+	if err := svc.RouteAdd(); err != nil {
+		log.Warnf("post up route add %s", err.Error())
+	}
 }
 
 func (svc *Server) Launch() error {
@@ -93,6 +115,9 @@ func (svc *Server) Launch() error {
 
 	// Forward local tun traffic to net
 	go svc.IfaceToNet()
+
+	// PostUP
+	go svc.PostUp()
 
 	// Handle connection
 	for {

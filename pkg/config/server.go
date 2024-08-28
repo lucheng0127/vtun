@@ -19,11 +19,6 @@ type WebConfig struct {
 	Port   int  `yaml:"port" default:"8000"`
 }
 
-type RoutesConfig struct {
-	CIDR    string `yaml:"cidr" validate:"required,validateCidr"`
-	Nexthop string `yaml:"nexthop" validate:"required"`
-}
-
 type ServerConfig struct {
 	Port       int    `yaml:"port" default:"6123"`
 	IP         string `yaml:"ip" validate:"required,validateIPv4Addr"`
@@ -31,11 +26,11 @@ type ServerConfig struct {
 	Key        string `yaml:"key" validate:"required,validateKeyLen"`
 	IPRange    string `yaml:"ip-range" validate:"required"`
 	*WebConfig `yaml:"web"`
-	Routes     []*RoutesConfig `yaml:"routes"`
-	PreUp      []string        `yaml:"pre-up"`
-	PostUp     []string        `yaml:"post-up"`
-	PreDown    []string        `yaml:"pre-down"`
-	PostDown   []string        `yaml:"post-down"`
+	Routes     []string `yaml:"routes" validate:"dive,validateCIDR"`
+	PreUp      []string `yaml:"pre-up"`
+	PostUp     []string `yaml:"post-up"`
+	PreDown    []string `yaml:"pre-down"`
+	PostDown   []string `yaml:"post-down"`
 }
 
 func GetCfgPath(dir string) string {
@@ -66,17 +61,11 @@ func LoadServerConfigFile(path string) (*ServerConfig, error) {
 
 	cfgValidator := validator.New()
 	cfgValidator.RegisterValidation("validateKeyLen", ValidateKeyLength)
-	cfgValidator.RegisterValidation("validateCidr", ValidateCIDR)
+	cfgValidator.RegisterValidation("validateCIDR", ValidateCIDR)
 	cfgValidator.RegisterValidation("validateIPv4Addr", ValidateIPv4Addr)
 
 	if err := cfgValidator.Struct(cfg); err != nil {
 		return nil, err
-	}
-
-	for _, route := range cfg.Routes {
-		if err := cfgValidator.Struct(route); err != nil {
-			return nil, err
-		}
 	}
 
 	if cfg.WebConfig != nil && cfg.WebConfig.Enable {

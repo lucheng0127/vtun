@@ -3,6 +3,7 @@ package iface
 import (
 	"errors"
 	"fmt"
+	"net"
 	"os"
 	"os/exec"
 	"sync"
@@ -205,4 +206,17 @@ func SetupTun(addr *netlink.Addr) (*NativeTun, error) {
 	}
 	tun.readWait = tun.session.ReadWaitEvent()
 	return tun, nil
+}
+
+func RoutiesAdd(iface string, routes []*net.IPNet, ip string) error {
+	for _, rNet := range routes {
+		netmask := fmt.Sprintf("%d.%d.%d.%d", rNet.Mask[0], rNet.Mask[1], rNet.Mask[2], rNet.Mask[3])
+		cmd := exec.Command("route", "add", rNet.IP.String(), "mask", netmask, ip)
+
+		if err := cmd.Run(); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

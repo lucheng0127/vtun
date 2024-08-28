@@ -15,6 +15,7 @@ type ClientConfig struct {
 	Passwd     string   `yaml:"passwd"`
 	LogLevel   string   `yaml:"log-level"`
 	AllowedIPs []string `yaml:"allowed-ips" validate:"dive,validateCIDR"`
+	Routes     []string `yaml:"routes" validate:"dive,validateCIDR"`
 }
 
 func LoadCleintConfigFile(path string) (*ClientConfig, error) {
