@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/lucheng0127/vtun/pkg/cipher"
+	"github.com/lucheng0127/vtun/pkg/iface"
 	"github.com/lucheng0127/vtun/pkg/protocol"
 	"github.com/lucheng0127/vtun/pkg/utils"
 	log "github.com/sirupsen/logrus"
@@ -19,13 +20,6 @@ const (
 	INTERVAL = 5
 )
 
-type IFace interface {
-	Close() error
-	Name() string
-	Read([]byte) (int, error)
-	Write([]byte) (int, error)
-}
-
 type Client struct {
 	Target     string
 	Cipher     cipher.Cipher
@@ -33,7 +27,7 @@ type Client struct {
 	Passwd     string
 	Conn       *net.UDPConn
 	IPAddr     *netlink.Addr
-	Iface      IFace
+	Iface      iface.IFace
 	AllowedIPs []string
 }
 

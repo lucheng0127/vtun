@@ -16,15 +16,8 @@ import (
 	"github.com/vishvananda/netlink"
 )
 
-type IFace interface {
-	Close() error
-	Name() string
-	Read([]byte) (int, error)
-	Write([]byte) (int, error)
-}
-
 type Server struct {
-	Iface   IFace
+	Iface   iface.IFace
 	IPAddr  *netlink.Addr
 	Port    int
 	Key     string

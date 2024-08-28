@@ -18,6 +18,13 @@ import (
 	"golang.zx2c4.com/wintun"
 )
 
+type IFace interface {
+	Close() error
+	Name() string
+	Read([]byte) (int, error)
+	Write([]byte) (int, error)
+}
+
 const (
 	EventUp = 1 << iota
 	EventDown
