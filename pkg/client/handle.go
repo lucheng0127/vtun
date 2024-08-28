@@ -9,7 +9,7 @@ import (
 	"github.com/vishvananda/netlink"
 )
 
-func (c *Client) HandleAck(payload []byte) error {
+func (c *Client) HandleAck(authChan chan string, payload []byte) error {
 	msg := string(payload)
 	// Parse msg, ip or error
 	ipAddr, err := netlink.ParseAddr(msg)
@@ -19,6 +19,7 @@ func (c *Client) HandleAck(payload []byte) error {
 	}
 
 	log.Infof("connect to server succeed, endpoint ip %s", ipAddr.String())
+	authChan <- "OK"
 	// Create tun
 	iface, err := iface.SetupTun(ipAddr)
 	if err != nil {

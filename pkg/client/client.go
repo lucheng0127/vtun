@@ -1,6 +1,7 @@
 package client
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -48,6 +49,15 @@ func NewClient(target, key, user, passwd string, allowedIPs []string) (C, error)
 	return c, nil
 }
 
+func checkLoginTimeout(c chan string) error {
+	select {
+	case <-c:
+		return nil
+	case <-time.After(10 * time.Second):
+		return errors.New("login timeout")
+	}
+}
+
 func (c *Client) Launch() error {
 	if runtime.GOOS == "windows" {
 		if err := utils.ExtractWintun(); err != nil {
@@ -66,6 +76,15 @@ func (c *Client) Launch() error {
 	}
 	defer conn.Close()
 	c.Conn = conn
+
+	// Check auth timeout
+	authChan := make(chan string, 1)
+	go func() {
+		if err := checkLoginTimeout(authChan); err != nil {
+			log.Error(err)
+			os.Exit(1)
+		}
+	}()
 
 	// Handle VTPkt
 	g := new(errgroup.Group)
@@ -86,7 +105,7 @@ func (c *Client) Launch() error {
 
 			switch flag {
 			case protocol.HDR_FLG_ACK:
-				if err := c.HandleAck(payload); err != nil {
+				if err := c.HandleAck(authChan, payload); err != nil {
 					return err
 				}
 			case protocol.HDR_FLG_DAT:
