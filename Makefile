@@ -21,6 +21,10 @@ build-arm64:
 .PHONY: build
 build: dir build-amd64 build-arm64
 
+.PHONY: new-key
+new-key:
+	sh scripts/generate_key.sh
+
 .PHONY: clean
 clean:
 	rm -f pkg/utils/wintun.dll
