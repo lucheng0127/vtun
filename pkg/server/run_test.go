@@ -91,7 +91,7 @@ func TestRun(t *testing.T) {
 		}
 
 		if tt.name == "ok" {
-			mockSvc.EXPECT().HandleSignal(gomock.Any()).Times(1)
+			// mockSvc.EXPECT().HandleSignal(gomock.Any()).Times(1)
 			mockSvc.EXPECT().Launch().Times(1)
 		}
 

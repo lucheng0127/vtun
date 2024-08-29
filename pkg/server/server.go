@@ -5,6 +5,7 @@ import (
 	"net"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/lucheng0127/vtun/pkg/auth"
 	"github.com/lucheng0127/vtun/pkg/cipher"
@@ -29,6 +30,7 @@ type Server struct {
 	HbMgr   *HeartbeatMgr
 	DstMgr  *DstMgr
 	Routes  []*net.IPNet
+	StartAt string
 }
 
 func NewServer(ipRange, userDB, key string, port int, ipAddr *netlink.Addr, routes []string) (Svc, error) {
@@ -105,6 +107,7 @@ func (svc *Server) Launch() error {
 	svc.Conn = ln
 	defer ln.Close()
 	log.Infof("vtun server run on udp port %d", svc.Port)
+	svc.StartAt = time.Now().Format("2006-01-02 15:04:05")
 
 	// Use aes cipher
 	aesCipher, err := cipher.NewAESCipher(svc.Key)

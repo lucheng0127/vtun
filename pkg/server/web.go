@@ -36,6 +36,7 @@ func (svc *WebServer) Serve() {
 
 	// URL
 	router.GET("/endpoints", listEndpoints)
+	router.GET("/destination", listDestination)
 	router.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, string(indexFilename), nil)
 	})
@@ -48,29 +49,18 @@ type EPEntry struct {
 	User    string
 	Addr    string
 	IP      string
-	ExNet   string
 	LoginAt string
 }
 
-func getEpForwardMap() map[string]string {
-	data := make(map[string]string)
-
-	for eNet, ep := range VSvc.(*Server).DstMgr.ExNetMap {
-		eData, ok := data[ep.User]
-		if ok {
-			eData += fmt.Sprintf(",%s", eNet.String())
-			data[ep.User] = eData
-		} else {
-			data[ep.User] = eNet.String()
-		}
-	}
-
-	return data
-}
-
 func listEndpoints(c *gin.Context) {
-	exNetMap := getEpForwardMap()
-	var data []*EPEntry
+	data := []*EPEntry{
+		{
+			User:    "vtun server",
+			Addr:    fmt.Sprintf(":%d", VSvc.(*Server).Port),
+			IP:      VSvc.(*Server).IPAddr.String(),
+			LoginAt: VSvc.(*Server).StartAt,
+		},
+	}
 
 	for ipKey := range VSvc.(*Server).EPMgr.EPIPMap {
 		ep := VSvc.(*Server).EPMgr.GetEPByIP(ipKey)
@@ -80,10 +70,35 @@ func listEndpoints(c *gin.Context) {
 			Addr:    ep.RAddr.String(),
 			IP:      ep.IP.String(),
 			LoginAt: ep.LoginTime,
-			ExNet:   exNetMap[ep.User],
 		}
 
 		data = append(data, epEn)
+	}
+
+	c.JSON(http.StatusOK, data)
+}
+
+type FwdEntry struct {
+	CIDR   string
+	EPUser string
+	EPIP   string
+}
+
+func listDestination(c *gin.Context) {
+	data := []*FwdEntry{
+		{
+			CIDR:   "Default",
+			EPUser: "vtun server",
+			EPIP:   VSvc.(*Server).IPAddr.String(),
+		},
+	}
+
+	for eNet, ep := range VSvc.(*Server).DstMgr.ExNetMap {
+		data = append(data, &FwdEntry{
+			CIDR:   eNet.String(),
+			EPUser: ep.User,
+			EPIP:   ep.IP.String(),
+		})
 	}
 
 	c.JSON(http.StatusOK, data)
