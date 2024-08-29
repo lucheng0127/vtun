@@ -4,4 +4,5 @@ main.darwin
 main.exe
 pkg/utils/wintun.dll
 build
+index_*.html
 .vscode

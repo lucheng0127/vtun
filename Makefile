@@ -29,3 +29,4 @@ new-key:
 clean:
 	rm -f pkg/utils/wintun.dll
 	rm -rf build
+	rm -f index_*.html

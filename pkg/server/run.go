@@ -18,6 +18,8 @@ type Svc interface {
 	HandleSignal(chan os.Signal)
 }
 
+var VSvc Svc
+
 func Run(cCtx *cli.Context) error {
 	// Parse config
 	cfgDir := cCtx.String("config-dir")
@@ -53,11 +55,22 @@ func Run(cCtx *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	VSvc = svc
 
 	// Handle signal
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
 	go svc.HandleSignal(sigChan)
+
+	// Launch web server
+	if cfg.WebConfig != nil && cfg.WebConfig.Enable {
+		webSvc := &WebServer{
+			Port: cfg.WebConfig.Port,
+		}
+
+		go webSvc.Serve()
+		log.Infof("run web server on port %d", webSvc.Port)
+	}
 
 	// Launch
 	return svc.Launch()
