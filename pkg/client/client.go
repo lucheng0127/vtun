@@ -20,6 +20,7 @@ import (
 
 const (
 	INTERVAL = 5
+	TIMEOUT  = 30
 )
 
 type Client struct {
@@ -32,6 +33,7 @@ type Client struct {
 	Iface      iface.IFace
 	AllowedIPs []string
 	Routes     []*net.IPNet
+	Beat       chan string
 }
 
 func NewClient(target, key, user, passwd string, allowedIPs, routes []string) (C, error) {
@@ -41,6 +43,7 @@ func NewClient(target, key, user, passwd string, allowedIPs, routes []string) (C
 		Passwd:     passwd,
 		AllowedIPs: allowedIPs,
 		Routes:     make([]*net.IPNet, 0),
+		Beat:       make(chan string),
 	}
 
 	for _, route := range routes {
@@ -131,6 +134,8 @@ func (c *Client) Launch() error {
 				}
 			case protocol.HDR_FLG_FIN:
 				c.HandleFin()
+			case protocol.HDR_FLG_PSH:
+				c.HandlePsh()
 			default:
 				continue
 			}
@@ -197,6 +202,9 @@ func (c *Client) RouteAdd() error {
 }
 
 func (c *Client) PostUp() {
+	// Monitor heartbeat
+	go c.MonitorHeartbeat()
+
 	// Add routes
 	if err := c.RouteAdd(); err != nil {
 		log.Warnf("post up route add %s", err.Error())
@@ -210,7 +218,7 @@ func (c *Client) SendHeartbeat() {
 		if err := c.SendPsh(); err != nil {
 			log.Error(err)
 		}
-		log.Debug("Heartbeat sent")
+		log.Debug("heartbeat sent")
 
 		<-ticker.C
 	}
@@ -228,4 +236,16 @@ func (c *Client) HandleSignal(sigChan chan os.Signal) {
 	log.Infof("received signal: %v, stop server", sig)
 	c.Teardown()
 	os.Exit(0)
+}
+
+func (c *Client) MonitorHeartbeat() {
+	for {
+		select {
+		case <-c.Beat:
+			continue
+		case <-time.After(TIMEOUT * time.Second):
+			log.Warn("monitor heartbeat timeout, exit")
+			os.Exit(1)
+		}
+	}
 }

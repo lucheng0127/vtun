@@ -17,6 +17,10 @@ import (
 	"github.com/vishvananda/netlink"
 )
 
+const (
+	INTERVAL = 5
+)
+
 type Server struct {
 	Iface   iface.IFace
 	IPAddr  *netlink.Addr
@@ -79,7 +83,24 @@ func (svc *Server) RouteAdd() error {
 	return iface.RoutiesAdd(svc.Iface.Name(), svc.Routes, "")
 }
 
+func (svc *Server) SendHeartbeatToEPs() {
+	for {
+		for _, ep := range svc.EPMgr.EPAddrMap {
+			if err := svc.SendPsh(ep.RAddr); err != nil {
+				log.Warnf("send heartbeat to ep %s raddr %s %s", ep.User, ep.RAddr.String(), err.Error())
+			} else {
+				log.Debugf("send heartbeat to ep %s raddr %s", ep.User, ep.RAddr.String())
+			}
+		}
+
+		time.Sleep(INTERVAL * time.Second)
+	}
+}
+
 func (svc *Server) PostUp() {
+	// Send hearbeat to all endpoints
+	go svc.SendHeartbeatToEPs()
+
 	// Add routes
 	if err := svc.RouteAdd(); err != nil {
 		log.Warnf("post up route add %s", err.Error())

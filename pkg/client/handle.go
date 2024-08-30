@@ -34,7 +34,10 @@ func (c *Client) HandleAck(authChan chan string, payload []byte) error {
 	return nil
 }
 
-func (c *Client) HandleDat(payload []byte) {}
+func (c *Client) HandlePsh() {
+	log.Debug("heartbeat received")
+	c.Beat <- "ping"
+}
 
 func (c *Client) HandleFin() {
 	log.Info("FIN pkt received, exist")
